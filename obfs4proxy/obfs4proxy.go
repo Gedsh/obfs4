@@ -32,6 +32,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"gitlab.com/yawning/obfs4.git/transports/obfs4"
 	"io"
 	golog "log"
 	"net"
@@ -159,7 +160,10 @@ func clientHandler(f base.ClientFactory, conn net.Conn, proxyURI *url.URL) {
 	remote, err := f.Dial("tcp", socksReq.Target, dialFn, args)
 	if err != nil {
 		log.Errorf("%s(%s) - outgoing connection failed: %s", name, addrStr, log.ElideError(err))
-		_ = socksReq.Reply(socks5.ErrorToReplyCode(err))
+		_, isInvalidAuthError := err.(*obfs4.InvalidAuthError)
+		if !isInvalidAuthError {
+			_ = socksReq.Reply(socks5.ErrorToReplyCode(err))
+		}
 		return
 	}
 	defer remote.Close()
